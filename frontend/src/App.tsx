@@ -23,9 +23,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function DashboardRedirect() {
-  const { user } = useAuth();
-  if (user?.role === 'COACH') return <Navigate to="/coach" />;
-  if (user?.role === 'ORG_ADMIN') return <Navigate to="/admin" />;
+  const { activeRole } = useAuth();
+  if (activeRole === 'COACH') return <Navigate to="/coach" />;
+  if (activeRole === 'ORG_ADMIN') return <Navigate to="/admin" />;
   return <Navigate to="/parent" />;
 }
 
