@@ -20,7 +20,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
 router.put('/:id', authenticate, async (req: Request, res: Response) => {
   const { firstName, lastName, dateOfBirth } = req.body;
   const child = await prisma.child.updateMany({
-    where: { id: req.params.id, parentId: req.user!.userId },
+    where: { id: req.params.id as string, parentId: req.user!.userId },
     data: { firstName, lastName, dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined },
   });
   if (child.count === 0) { res.status(404).json({ error: 'Child not found' }); return; }
@@ -28,7 +28,7 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
 });
 
 router.delete('/:id', authenticate, async (req: Request, res: Response) => {
-  await prisma.child.deleteMany({ where: { id: req.params.id, parentId: req.user!.userId } });
+  await prisma.child.deleteMany({ where: { id: req.params.id as string, parentId: req.user!.userId } });
   res.json({ success: true });
 });
 

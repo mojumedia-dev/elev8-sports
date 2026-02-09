@@ -7,7 +7,7 @@ const router = Router();
 // Team messages
 router.get('/team/:teamId', authenticate, async (req: Request, res: Response) => {
   const messages = await prisma.message.findMany({
-    where: { teamId: req.params.teamId },
+    where: { teamId: req.params.teamId as string },
     include: { sender: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
     orderBy: { createdAt: 'asc' },
     take: 100,
@@ -21,8 +21,8 @@ router.get('/dm/:userId', authenticate, async (req: Request, res: Response) => {
     where: {
       teamId: null,
       OR: [
-        { senderId: req.user!.userId, recipientId: req.params.userId },
-        { senderId: req.params.userId, recipientId: req.user!.userId },
+        { senderId: req.user!.userId, recipientId: req.params.userId as string },
+        { senderId: req.params.userId as string, recipientId: req.user!.userId },
       ],
     },
     include: { sender: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },

@@ -42,7 +42,7 @@ router.post('/upload-csv', authenticate, async (req: Request, res: Response) => 
         sport: resolvedSport as any,
         importType: 'CSV',
         rawData: { csv: csvData },
-        parsedStats: { players: parsed.players, rowCount: parsed.rowCount },
+        parsedStats: JSON.parse(JSON.stringify({ players: parsed.players, rowCount: parsed.rowCount })),
         season: resolvedSeason,
         teamName: resolvedTeamName,
       },
@@ -101,7 +101,7 @@ router.post('/upload-csv', authenticate, async (req: Request, res: Response) => 
  * Get all imported stats for a child
  */
 router.get('/stats/:childId', authenticate, async (req: Request, res: Response) => {
-  const { childId } = req.params;
+  const childId = req.params.childId as string;
   const { sport, season, source } = req.query;
 
   // Verify access (parent owns child, or coach on same team)
@@ -116,9 +116,9 @@ router.get('/stats/:childId', authenticate, async (req: Request, res: Response) 
   }
 
   const where: any = { childId };
-  if (sport) where.sport = sport;
-  if (season) where.season = season;
-  if (source) where.source = source;
+  if (sport) where.sport = sport as string;
+  if (season) where.season = season as string;
+  if (source) where.source = source as string;
 
   const stats = await prisma.playerStats.findMany({
     where,
@@ -134,12 +134,12 @@ router.get('/stats/:childId', authenticate, async (req: Request, res: Response) 
  * Get season averages and trends
  */
 router.get('/stats/:childId/summary', authenticate, async (req: Request, res: Response) => {
-  const { childId } = req.params;
+  const childId = req.params.childId as string;
   const { sport, season } = req.query;
 
   const where: any = { childId };
-  if (sport) where.sport = sport;
-  if (season) where.season = season;
+  if (sport) where.sport = sport as string;
+  if (season) where.season = season as string;
 
   const stats = await prisma.playerStats.findMany({ where });
 

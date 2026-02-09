@@ -20,7 +20,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
 
 router.get('/:id', authenticate, async (req: Request, res: Response) => {
   const team = await prisma.team.findUnique({
-    where: { id: req.params.id },
+    where: { id: req.params.id as string },
     include: { organization: true, members: { include: { user: { select: { id: true, firstName: true, lastName: true, email: true, role: true } }, child: true } }, events: { orderBy: { startTime: 'asc' } } },
   });
   if (!team) { res.status(404).json({ error: 'Not found' }); return; }
@@ -39,19 +39,19 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
 
 router.put('/:id', authenticate, async (req: Request, res: Response) => {
   const { name, sport, season, ageGroup } = req.body;
-  const team = await prisma.team.update({ where: { id: req.params.id }, data: { name, sport, season, ageGroup } });
+  const team = await prisma.team.update({ where: { id: req.params.id as string }, data: { name, sport, season, ageGroup } });
   res.json(team);
 });
 
 router.delete('/:id', authenticate, async (req: Request, res: Response) => {
-  await prisma.team.delete({ where: { id: req.params.id } });
+  await prisma.team.delete({ where: { id: req.params.id as string } });
   res.json({ success: true });
 });
 
 // Team member management
 router.post('/:id/members', authenticate, async (req: Request, res: Response) => {
   const { userId, childId, role } = req.body;
-  const member = await prisma.teamMember.create({ data: { teamId: req.params.id, userId, childId, role: role || 'PLAYER' } });
+  const member = await prisma.teamMember.create({ data: { teamId: req.params.id as string, userId, childId, role: role || 'PLAYER' } });
   res.status(201).json(member);
 });
 

@@ -16,7 +16,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
 
 router.get('/event/:eventId', authenticate, async (req: Request, res: Response) => {
   const rsvps = await prisma.rsvp.findMany({
-    where: { eventId: req.params.eventId },
+    where: { eventId: req.params.eventId as string },
     include: { user: { select: { firstName: true, lastName: true } } },
   });
   res.json(rsvps);
