@@ -8,6 +8,7 @@ export default function ParentDashboard() {
   const { data: children } = useApi<any[]>('/children');
   const { data: events } = useApi<any[]>('/events');
   const { data: notifications } = useApi<any[]>('/notifications');
+  const { data: imports } = useApi<any[]>('/imports/gamechanger/imports');
 
   const upcoming = events?.filter((e: any) => new Date(e.startTime) > new Date()).slice(0, 5) || [];
   const unread = notifications?.filter((n: any) => !n.read).length || 0;
@@ -60,12 +61,13 @@ export default function ParentDashboard() {
           ) : (
             <div className="space-y-3">
               {children?.map((child: any) => (
-                <div key={child.id} className="flex items-center justify-between p-3 bg-slate rounded-lg">
+                <Link key={child.id} to={`/players/${child.id}`} className="flex items-center justify-between p-3 bg-slate rounded-lg hover:bg-gray-100 transition">
                   <div>
                     <p className="font-medium text-secondary">{child.firstName} {child.lastName}</p>
                     <p className="text-sm text-gray-500">{child.teamMembers?.length || 0} teams</p>
                   </div>
-                </div>
+                  <span className="text-gray-400 text-sm">View Stats →</span>
+                </Link>
               ))}
             </div>
           )}
@@ -96,6 +98,39 @@ export default function ParentDashboard() {
           )}
         </Card>
       </div>
+
+      {/* GameChanger Import Card */}
+      <Card className="mt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-secondary">📊 Recent Stat Imports</h2>
+          <Link to="/import-stats" className="text-sm text-primary hover:underline">Import Stats</Link>
+        </div>
+        {!imports || imports.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-gray-400 text-sm mb-2">No stats imported yet.</p>
+            <Link to="/import-stats" className="text-sm text-primary hover:underline font-medium">
+              Import from GameChanger →
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {imports.slice(0, 3).map((imp: any) => (
+              <div key={imp.id} className="flex items-center justify-between p-3 bg-slate rounded-lg">
+                <div>
+                  <p className="font-medium text-secondary">
+                    {imp.child?.firstName} {imp.child?.lastName}
+                    {imp.teamName && <span className="text-gray-500"> — {imp.teamName}</span>}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {imp.sport === 'SOFTBALL' ? '🥎' : '⚾'} {imp.sport} · {imp._count?.stats || 0} stats
+                  </p>
+                </div>
+                <p className="text-xs text-gray-400">{new Date(imp.importedAt).toLocaleDateString()}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

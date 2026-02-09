@@ -13,6 +13,25 @@ enum Role {
   ORG_ADMIN
 }
 
+enum Sport {
+  BASEBALL
+  SOFTBALL
+  BASKETBALL
+  SOCCER
+  FLAG_FOOTBALL
+  OTHER
+}
+
+enum ImportType {
+  CSV
+  API
+}
+
+enum StatSource {
+  GAMECHANGER
+  MANUAL
+}
+
 enum RsvpStatus {
   GOING
   MAYBE
@@ -50,6 +69,7 @@ model User {
   sentMessages  Message[]      @relation("SentMessages")
   notifications Notification[]
   refreshTokens RefreshToken[]
+  gcImports     GameChangerImport[]
 }
 
 model RefreshToken {
@@ -69,6 +89,8 @@ model Child {
   parentId    String
   parent      User         @relation(fields: [parentId], references: [id], onDelete: Cascade)
   teamMembers TeamMember[]
+  stats       PlayerStats[]
+  gcImports   GameChangerImport[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
@@ -161,4 +183,36 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   link      String?
   createdAt DateTime @default(now())
+}
+
+model GameChangerImport {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  childId     String
+  child       Child       @relation(fields: [childId], references: [id], onDelete: Cascade)
+  sport       Sport
+  importType  ImportType  @default(CSV)
+  rawData     Json
+  parsedStats Json
+  season      String?
+  teamName    String?
+  importedAt  DateTime    @default(now())
+  stats       PlayerStats[]
+  createdAt   DateTime    @default(now())
+}
+
+model PlayerStats {
+  id        String     @id @default(cuid())
+  childId   String
+  child     Child      @relation(fields: [childId], references: [id], onDelete: Cascade)
+  sport     Sport
+  season    String?
+  statType  String
+  statValue Float
+  source    StatSource @default(GAMECHANGER)
+  importId  String?
+  import    GameChangerImport? @relation(fields: [importId], references: [id], onDelete: SetNull)
+  gameDate  DateTime?
+  createdAt DateTime   @default(now())
 }

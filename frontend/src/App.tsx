@@ -11,6 +11,8 @@ import TeamView from './pages/TeamView';
 import Schedule from './pages/Schedule';
 import Messages from './pages/Messages';
 import Directory from './pages/Directory';
+import ImportStats from './pages/ImportStats';
+import PlayerProfile from './pages/PlayerProfile';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -46,6 +48,8 @@ export default function App() {
         <Route path="/schedule" element={<Schedule />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/directory" element={<Directory />} />
+        <Route path="/import-stats" element={<ImportStats />} />
+        <Route path="/players/:childId" element={<PlayerProfile />} />
       </Route>
     </Routes>
   );

@@ -23,6 +23,7 @@ export default function Layout() {
               <Link to="/schedule" className="hover:text-primary transition-colors">Schedule</Link>
               <Link to="/messages" className="hover:text-primary transition-colors">Messages</Link>
               <Link to="/directory" className="hover:text-primary transition-colors">Directory</Link>
+              <Link to="/import-stats" className="hover:text-primary transition-colors">Stats</Link>
               <div className="flex items-center space-x-3 ml-4 pl-4 border-l border-gray-600">
                 <span className="text-sm text-gray-300">{user?.firstName} {user?.lastName}</span>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">{user?.role}</span>

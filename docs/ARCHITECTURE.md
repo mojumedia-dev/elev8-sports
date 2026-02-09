@@ -83,6 +83,45 @@ elev8-sports/
 └── README.md
 ```
 
+## GameChanger Integration
+
+Elev8 imports stats from GameChanger via CSV upload (with future API partnership planned).
+
+```
+┌──────────────┐     CSV Export     ┌──────────────────┐
+│ GameChanger  │ ─────────────────→ │ Elev8 CSV Parser │
+│ (stat track) │                    │ (gamechangerParser│
+└──────────────┘                    │  .ts)            │
+                                    └────────┬─────────┘
+                                             │
+                                    ┌────────▼─────────┐
+                                    │ GameChangerImport │
+                                    │ PlayerStats       │
+                                    │ (PostgreSQL)      │
+                                    └────────┬─────────┘
+                                             │
+                                    ┌────────▼─────────┐
+                                    │ Player Profile UI │
+                                    │ Import Stats UI   │
+                                    │ Dashboard Cards   │
+                                    └──────────────────┘
+```
+
+### New Models
+- **GameChangerImport** — tracks each CSV upload with raw + parsed data
+- **PlayerStats** — individual stat records (batting/pitching) linked to child, sport, season
+
+### New Routes
+- `POST /api/imports/gamechanger/upload-csv` — parse and import CSV
+- `GET /api/imports/gamechanger/stats/:childId` — child's stats
+- `GET /api/imports/gamechanger/stats/:childId/summary` — season averages
+- `GET /api/imports/gamechanger/imports` — user's import history
+
+### Supported Sports
+Baseball, Softball (launch), with Basketball, Soccer, Flag Football enum values ready for future.
+
+See [GAMECHANGER-INTEGRATION.md](./GAMECHANGER-INTEGRATION.md) for full strategy.
+
 ## Key Decisions
 
 1. **Monorepo** — single repo, separate package.json per app

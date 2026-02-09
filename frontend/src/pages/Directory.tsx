@@ -6,11 +6,14 @@ export default function Directory() {
   const { data: teams } = useApi<any[]>('/teams');
   const { data: orgs } = useApi<any[]>('/organizations');
   const [search, setSearch] = useState('');
+  const [sportFilter, setSportFilter] = useState('');
   const [tab, setTab] = useState<'teams' | 'orgs'>('teams');
 
-  const filteredTeams = teams?.filter((t: any) =>
-    t.name.toLowerCase().includes(search.toLowerCase()) || t.sport.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  const filteredTeams = teams?.filter((t: any) => {
+    const matchesSearch = t.name.toLowerCase().includes(search.toLowerCase()) || t.sport.toLowerCase().includes(search.toLowerCase());
+    const matchesSport = !sportFilter || t.sport === sportFilter;
+    return matchesSearch && matchesSport;
+  }) || [];
 
   const filteredOrgs = orgs?.filter((o: any) =>
     o.name.toLowerCase().includes(search.toLowerCase())
@@ -23,9 +26,20 @@ export default function Directory() {
         <p className="text-gray-500 mt-1">Find teams and organizations.</p>
       </div>
 
-      <div className="mb-6 flex items-center gap-4">
+      <div className="mb-6 flex items-center gap-4 flex-wrap">
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search teams, organizations..."
           className="flex-1 max-w-md px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+        {tab === 'teams' && (
+          <select value={sportFilter} onChange={(e) => setSportFilter(e.target.value)}
+            className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none">
+            <option value="">All Sports</option>
+            <option value="BASEBALL">⚾ Baseball</option>
+            <option value="SOFTBALL">🥎 Softball</option>
+            <option value="BASKETBALL">🏀 Basketball</option>
+            <option value="SOCCER">⚽ Soccer</option>
+            <option value="FLAG_FOOTBALL">🏈 Flag Football</option>
+          </select>
+        )}
         <div className="flex bg-white rounded-lg border border-gray-200">
           <button onClick={() => setTab('teams')}
             className={`px-4 py-2 text-sm font-medium rounded-l-lg transition ${tab === 'teams' ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-50'}`}>

@@ -41,8 +41,16 @@ export default function Teams() {
             <div className="grid grid-cols-2 gap-3">
               <input placeholder="Team Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-              <input placeholder="Sport (e.g., Basketball)" value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })} required
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+              <select value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })} required
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                <option value="">Select Sport...</option>
+                <option value="BASEBALL">⚾ Baseball</option>
+                <option value="SOFTBALL">🥎 Softball</option>
+                <option value="BASKETBALL">🏀 Basketball</option>
+                <option value="SOCCER">⚽ Soccer</option>
+                <option value="FLAG_FOOTBALL">🏈 Flag Football</option>
+                <option value="OTHER">Other</option>
+              </select>
               <input placeholder="Season (e.g., Spring 2025)" value={form.season} onChange={(e) => setForm({ ...form, season: e.target.value })}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" />
               <input placeholder="Age Group (e.g., U12)" value={form.ageGroup} onChange={(e) => setForm({ ...form, ageGroup: e.target.value })}
