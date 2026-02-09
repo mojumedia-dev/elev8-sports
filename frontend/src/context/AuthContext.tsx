@@ -28,7 +28,7 @@ const AuthContext = createContext<AuthState>({} as AuthState);
 export const useAuth = () => useContext(AuthContext);
 
 // Admin emails that can toggle between all roles
-const ADMIN_EMAILS = ['adam@mojumedia.com', 'josh@augmentadvertise.com', 'donald@augmentadvertise.com'];
+const ADMIN_EMAILS = ['adamlloyd@msn.com', 'adam@mojumedia.com', 'josh@augmentadvertise.com', 'donald@augmentadvertise.com'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
