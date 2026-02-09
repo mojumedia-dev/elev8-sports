@@ -25,15 +25,19 @@ const POSITIONS_BY_SPORT: Record<string, string[]> = {
 
 const sportEmoji: Record<string, string> = { BASEBALL: '⚾', SOFTBALL: '🥎', BASKETBALL: '🏀', SOCCER: '⚽', FLAG_FOOTBALL: '🏈', OTHER: '🏅' };
 
-export default function Children() {
-  const { token } = useAuth();
-  const { data: children, refetch } = useApi<any[]>('/children');
-  const [showForm, setShowForm] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [sport, setSport] = useState('');
-  const [positions, setPositions] = useState<string[]>([]);
+interface ChildFormProps {
+  initial?: { firstName: string; lastName: string; dateOfBirth: string; sport: string; positions: string[] };
+  onSubmit: (data: any) => Promise<void>;
+  onCancel: () => void;
+  submitLabel: string;
+}
+
+function ChildForm({ initial, onSubmit, onCancel, submitLabel }: ChildFormProps) {
+  const [firstName, setFirstName] = useState(initial?.firstName || '');
+  const [lastName, setLastName] = useState(initial?.lastName || '');
+  const [dateOfBirth, setDateOfBirth] = useState(initial?.dateOfBirth || '');
+  const [sport, setSport] = useState(initial?.sport || '');
+  const [positions, setPositions] = useState<string[]>(initial?.positions || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -54,14 +58,89 @@ export default function Children() {
     setLoading(true);
     setError('');
     try {
-      await api('/children', {
-        method: 'POST', token: token!,
-        body: { firstName, lastName, dateOfBirth: dateOfBirth || null, sport: sport || null, positions },
-      });
-      setFirstName(''); setLastName(''); setDateOfBirth(''); setSport(''); setPositions([]); setShowForm(false);
-      refetch();
+      await onSubmit({ firstName, lastName, dateOfBirth: dateOfBirth || null, sport: sport || null, positions });
     } catch (err: any) { setError(err.message); }
     finally { setLoading(false); }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">First Name *</label>
+          <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2.5 sm:py-2 text-base sm:text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none" placeholder="First name" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Last Name *</label>
+          <input type="text" value={lastName} onChange={e => setLastName(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2.5 sm:py-2 text-base sm:text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none" placeholder="Last name" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Date of Birth</label>
+          <input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2.5 sm:py-2 text-base sm:text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none" />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-600 mb-1">Sport</label>
+        <select value={sport} onChange={e => handleSportChange(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2.5 sm:py-2 text-base sm:text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none bg-white">
+          <option value="">Select a sport...</option>
+          {SPORTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+      </div>
+
+      {sport && availablePositions.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-2">Positions <span className="text-gray-400">(select all that apply)</span></label>
+          <div className="flex flex-wrap gap-2">
+            {availablePositions.map(pos => (
+              <button key={pos} type="button" onClick={() => togglePosition(pos)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition active:scale-95 ${
+                  positions.includes(pos)
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary'
+                }`}>
+                {pos}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row gap-2 pt-2">
+        <button type="submit" disabled={loading}
+          className="bg-primary text-white px-6 py-2.5 sm:py-2 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 text-base sm:text-sm w-full sm:w-auto">
+          {loading ? 'Saving...' : submitLabel}
+        </button>
+        <button type="button" onClick={onCancel}
+          className="text-gray-500 px-6 py-2.5 sm:py-2 rounded-lg font-medium hover:bg-gray-100 transition text-base sm:text-sm w-full sm:w-auto">
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+export default function Children() {
+  const { token } = useAuth();
+  const { data: children, refetch } = useApi<any[]>('/children');
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const handleAdd = async (data: any) => {
+    await api('/children', { method: 'POST', token: token!, body: data });
+    setShowForm(false);
+    refetch();
+  };
+
+  const handleEdit = async (id: string, data: any) => {
+    await api(`/children/${id}`, { method: 'PUT', token: token!, body: data });
+    setEditingId(null);
+    refetch();
   };
 
   const handleDelete = async (id: string) => {
@@ -71,13 +150,14 @@ export default function Children() {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
+    <div className="px-1 sm:px-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-secondary">My Children</h1>
-          <p className="text-gray-500 mt-1">Manage your children's profiles, sports, and positions.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary">My Children</h1>
+          <p className="text-gray-500 mt-1 text-sm sm:text-base">Manage profiles, sports, and positions.</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition">
+        <button onClick={() => { setShowForm(!showForm); setEditingId(null); }}
+          className="bg-primary text-white px-4 py-2.5 sm:py-2 rounded-lg font-medium hover:bg-blue-700 transition text-base sm:text-sm w-full sm:w-auto">
           {showForm ? 'Cancel' : '+ Add Child'}
         </button>
       </div>
@@ -85,95 +165,72 @@ export default function Children() {
       {showForm && (
         <Card className="mb-6">
           <h2 className="text-lg font-semibold text-secondary mb-4">Add a Child</h2>
-          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">First Name *</label>
-                <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none" placeholder="First name" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Last Name *</label>
-                <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none" placeholder="Last name" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Date of Birth</label>
-                <input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Sport</label>
-                <select value={sport} onChange={e => handleSportChange(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none bg-white">
-                  <option value="">Select a sport...</option>
-                  {SPORTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
-              </div>
-            </div>
-
-            {sport && availablePositions.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Positions <span className="text-gray-400">(select all that apply)</span></label>
-                <div className="flex flex-wrap gap-2">
-                  {availablePositions.map(pos => (
-                    <button key={pos} type="button" onClick={() => togglePosition(pos)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
-                        positions.includes(pos)
-                          ? 'bg-primary text-white border-primary'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary'
-                      }`}>
-                      {pos}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <button type="submit" disabled={loading} className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50">
-                {loading ? 'Adding...' : 'Add Child'}
-              </button>
-            </div>
-          </form>
+          <ChildForm onSubmit={handleAdd} onCancel={() => setShowForm(false)} submitLabel="Add Child" />
         </Card>
       )}
 
       {!children || children.length === 0 ? (
         <Card>
-          <div className="text-center py-12">
+          <div className="text-center py-8 sm:py-12">
             <div className="text-5xl mb-4">👧👦</div>
             <h3 className="text-xl font-semibold text-secondary mb-2">No children added yet</h3>
-            <p className="text-gray-400 mb-4">Add your child's profile to start tracking their sports, teams, and stats.</p>
-            <button onClick={() => setShowForm(true)} className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition">
+            <p className="text-gray-400 mb-4 text-sm sm:text-base px-4">Add your child's profile to start tracking their sports, teams, and stats.</p>
+            <button onClick={() => setShowForm(true)} className="bg-primary text-white px-6 py-2.5 sm:py-2 rounded-lg font-medium hover:bg-blue-700 transition w-full sm:w-auto">
               + Add Your First Child
             </button>
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {children.map((child: any) => (
             <Card key={child.id}>
-              <div className="flex items-start justify-between">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-xl font-bold text-primary">
-                  {child.firstName[0]}{child.lastName[0]}
+              {editingId === child.id ? (
+                <div>
+                  <h3 className="text-lg font-semibold text-secondary mb-3">Edit Child</h3>
+                  <ChildForm
+                    initial={{
+                      firstName: child.firstName,
+                      lastName: child.lastName,
+                      dateOfBirth: child.dateOfBirth ? child.dateOfBirth.split('T')[0] : '',
+                      sport: child.sport || '',
+                      positions: child.positions || [],
+                    }}
+                    onSubmit={(data) => handleEdit(child.id, data)}
+                    onCancel={() => setEditingId(null)}
+                    submitLabel="Save Changes"
+                  />
                 </div>
-                <button onClick={() => handleDelete(child.id)} className="text-gray-300 hover:text-red-500 transition text-sm">✕</button>
-              </div>
-              <h3 className="text-lg font-semibold text-secondary mt-3">{child.firstName} {child.lastName}</h3>
-              {child.dateOfBirth && <p className="text-sm text-gray-500">Born: {new Date(child.dateOfBirth).toLocaleDateString()}</p>}
-              {child.sport && <p className="text-sm text-gray-500 mt-1">{sportEmoji[child.sport] || '🏅'} {child.sport.replace('_', ' ')}</p>}
-              {child.positions?.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {child.positions.map((pos: string) => (
-                    <span key={pos} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{pos}</span>
-                  ))}
-                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-xl font-bold text-primary shrink-0">
+                      {child.firstName[0]}{child.lastName[0]}
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => { setEditingId(child.id); setShowForm(false); }}
+                        className="text-gray-400 hover:text-primary transition text-sm p-1">✏️</button>
+                      <button onClick={() => handleDelete(child.id)}
+                        className="text-gray-300 hover:text-red-500 transition text-sm p-1">✕</button>
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-semibold text-secondary mt-3">{child.firstName} {child.lastName}</h3>
+                  {child.dateOfBirth && <p className="text-sm text-gray-500">Born: {new Date(child.dateOfBirth).toLocaleDateString()}</p>}
+                  {child.sport && <p className="text-sm text-gray-500 mt-1">{sportEmoji[child.sport] || '🏅'} {child.sport.replace(/_/g, ' ')}</p>}
+                  {child.positions?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {child.positions.map((pos: string) => (
+                        <span key={pos} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{pos}</span>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-400 mt-2">{child.teamMembers?.length || 0} teams</p>
+                  <div className="flex gap-3 mt-4 pt-3 border-t">
+                    <Link to={`/players/${child.id}`} className="text-sm text-primary hover:underline font-medium">View Stats →</Link>
+                    <button onClick={() => { setEditingId(child.id); setShowForm(false); }}
+                      className="text-sm text-gray-500 hover:text-primary font-medium">Edit</button>
+                  </div>
+                </>
               )}
-              <p className="text-sm text-gray-400 mt-2">{child.teamMembers?.length || 0} teams</p>
-              <div className="flex gap-2 mt-4">
-                <Link to={`/players/${child.id}`} className="text-sm text-primary hover:underline font-medium">View Stats →</Link>
-              </div>
             </Card>
           ))}
         </div>
