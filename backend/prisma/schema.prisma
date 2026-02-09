@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PARENT
+  COACH
+  ORG_ADMIN
+}
+
+enum RsvpStatus {
+  GOING
+  MAYBE
+  NOT_GOING
+}
+
+enum EventType {
+  PRACTICE
+  GAME
+  TRYOUT
+}
+
+enum TeamMemberRole {
+  PLAYER
+  COACH
+  MANAGER
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         Role           @default(PARENT)
+  avatarUrl    String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  children      Child[]
+  organizations Organization[] @relation("OrgAdmin")
+  teamMembers   TeamMember[]
+  rsvps         Rsvp[]
+  sentMessages  Message[]      @relation("SentMessages")
+  notifications Notification[]
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Child {
+  id          String       @id @default(cuid())
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime?
+  parentId    String
+  parent      User         @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  teamMembers TeamMember[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  logoUrl     String?
+  website     String?
+  adminId     String
+  admin       User     @relation("OrgAdmin", fields: [adminId], references: [id])
+  teams       Team[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Team {
+  id             String       @id @default(cuid())
+  name           String
+  sport          String
+  season         String?
+  ageGroup       String?
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  members        TeamMember[]
+  events         Event[]
+  messages       Message[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model TeamMember {
+  id        String         @id @default(cuid())
+  teamId    String
+  team      Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  childId   String?
+  child     Child?         @relation(fields: [childId], references: [id], onDelete: SetNull)
+  role      TeamMemberRole @default(PLAYER)
+  createdAt DateTime       @default(now())
+
+  @@unique([teamId, userId, childId])
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  type        EventType
+  startTime   DateTime
+  endTime     DateTime?
+  location    String?
+  teamId      String
+  team        Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  rsvps       Rsvp[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Rsvp {
+  id      String     @id @default(cuid())
+  status  RsvpStatus
+  eventId String
+  event   Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  senderId  String
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  teamId    String?
+  team      Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  recipientId String?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  link      String?
+  createdAt DateTime @default(now())
+}
