@@ -18,8 +18,8 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
 });
 
 router.post('/', authenticate, async (req: Request, res: Response) => {
-  const { title, description, type, startTime, endTime, location, teamId } = req.body;
-  const event = await prisma.event.create({ data: { title, description, type, startTime: new Date(startTime), endTime: endTime ? new Date(endTime) : null, location, teamId } });
+  const { title, description, type, startTime, endTime, location, teamId, organizationId } = req.body;
+  const event = await prisma.event.create({ data: { title, description, type, startTime: new Date(startTime), endTime: endTime ? new Date(endTime) : null, location, teamId: teamId || null, organizationId: organizationId || null } });
   res.status(201).json(event);
 });
 

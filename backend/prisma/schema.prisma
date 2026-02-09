@@ -111,8 +111,21 @@ model Organization {
   adminId       String
   admin         User     @relation("OrgAdmin", fields: [adminId], references: [id])
   teams         Team[]
+  announcements Announcement[]
+  events        Event[]     @relation("OrgEvents")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model Announcement {
+  id             String       @id @default(cuid())
+  title          String
+  content        String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  authorId       String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model Team {
@@ -149,18 +162,20 @@ model TeamMember {
 }
 
 model Event {
-  id          String    @id @default(cuid())
-  title       String
-  description String?
-  type        EventType
-  startTime   DateTime
-  endTime     DateTime?
-  location    String?
-  teamId      String
-  team        Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  rsvps       Rsvp[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id             String        @id @default(cuid())
+  title          String
+  description    String?
+  type           EventType
+  startTime      DateTime
+  endTime        DateTime?
+  location       String?
+  teamId         String?
+  team           Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation("OrgEvents", fields: [organizationId], references: [id], onDelete: Cascade)
+  rsvps          Rsvp[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 model Rsvp {

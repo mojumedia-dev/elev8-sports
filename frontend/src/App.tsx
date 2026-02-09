@@ -14,6 +14,7 @@ import Directory from './pages/Directory';
 import ImportStats from './pages/ImportStats';
 import PlayerProfile from './pages/PlayerProfile';
 import Children from './pages/Children';
+import OrgView from './pages/OrgView';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/directory" element={<Directory />} />
         <Route path="/import-stats" element={<ImportStats />} />
         <Route path="/children" element={<Children />} />
+        <Route path="/organizations/:id" element={<OrgView />} />
         <Route path="/players/:childId" element={<PlayerProfile />} />
       </Route>
     </Routes>

@@ -14,6 +14,7 @@ import rsvpRoutes from './routes/rsvps';
 import messageRoutes from './routes/messages';
 import notificationRoutes from './routes/notifications';
 import gamechangerRoutes from './routes/gamechanger';
+import announcementRoutes from './routes/announcements';
 import { errorHandler } from './middleware/errorHandler';
 
 export const prisma = new PrismaClient();
@@ -35,6 +36,7 @@ app.use('/api/rsvps', rsvpRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/imports/gamechanger', gamechangerRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 app.use(errorHandler);
 
