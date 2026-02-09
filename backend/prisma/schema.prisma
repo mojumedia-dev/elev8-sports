@@ -133,8 +133,12 @@ model TeamMember {
   user      User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   childId   String?
   child     Child?         @relation(fields: [childId], references: [id], onDelete: SetNull)
-  role      TeamMemberRole @default(PLAYER)
-  createdAt DateTime       @default(now())
+  role         TeamMemberRole @default(PLAYER)
+  firstName    String?
+  lastName     String?
+  position     String?
+  jerseyNumber String?
+  createdAt    DateTime       @default(now())
 
   @@unique([teamId, userId, childId])
 }

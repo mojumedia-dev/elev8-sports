@@ -50,9 +50,20 @@ router.delete('/:id', authenticate, async (req: Request, res: Response) => {
 
 // Team member management
 router.post('/:id/members', authenticate, async (req: Request, res: Response) => {
-  const { userId, childId, role } = req.body;
-  const member = await prisma.teamMember.create({ data: { teamId: req.params.id as string, userId, childId, role: role || 'PLAYER' } });
+  const { userId, childId, role, firstName, lastName, position, jerseyNumber } = req.body;
+  const member = await prisma.teamMember.create({
+    data: { teamId: req.params.id as string, userId: userId || null, childId: childId || null, role: role || 'PLAYER', firstName, lastName, position, jerseyNumber },
+  });
   res.status(201).json(member);
+});
+
+router.put('/:id/members/:memberId', authenticate, async (req: Request, res: Response) => {
+  const { firstName, lastName, position, jerseyNumber, role } = req.body;
+  const member = await prisma.teamMember.update({
+    where: { id: req.params.memberId as string },
+    data: { firstName, lastName, position, jerseyNumber, role: role || undefined },
+  });
+  res.json(member);
 });
 
 router.delete('/:id/members/:memberId', authenticate, async (req: Request, res: Response) => {
