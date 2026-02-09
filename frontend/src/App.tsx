@@ -13,6 +13,7 @@ import Messages from './pages/Messages';
 import Directory from './pages/Directory';
 import ImportStats from './pages/ImportStats';
 import PlayerProfile from './pages/PlayerProfile';
+import Children from './pages/Children';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/directory" element={<Directory />} />
         <Route path="/import-stats" element={<ImportStats />} />
+        <Route path="/children" element={<Children />} />
         <Route path="/players/:childId" element={<PlayerProfile />} />
       </Route>
     </Routes>
