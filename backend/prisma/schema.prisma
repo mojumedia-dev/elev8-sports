@@ -86,6 +86,8 @@ model Child {
   firstName   String
   lastName    String
   dateOfBirth DateTime?
+  sport       Sport?
+  positions   String[]     @default([])
   parentId    String
   parent      User         @relation(fields: [parentId], references: [id], onDelete: Cascade)
   teamMembers TeamMember[]
