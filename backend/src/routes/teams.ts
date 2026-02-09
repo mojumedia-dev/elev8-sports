@@ -56,7 +56,7 @@ router.post('/:id/members', authenticate, async (req: Request, res: Response) =>
 });
 
 router.delete('/:id/members/:memberId', authenticate, async (req: Request, res: Response) => {
-  await prisma.teamMember.delete({ where: { id: req.params.memberId } });
+  await prisma.teamMember.delete({ where: { id: req.params.memberId as string } });
   res.json({ success: true });
 });
 
