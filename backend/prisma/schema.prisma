@@ -98,16 +98,21 @@ model Child {
 }
 
 model Organization {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  logoUrl     String?
-  website     String?
-  adminId     String
-  admin       User     @relation("OrgAdmin", fields: [adminId], references: [id])
-  teams       Team[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  logoUrl       String?
+  website       String?
+  city          String?
+  state         String?
+  ageDivisions  String[] @default([])
+  seasons       String[] @default([])
+  sports        String[] @default([])
+  adminId       String
+  admin         User     @relation("OrgAdmin", fields: [adminId], references: [id])
+  teams         Team[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Team {

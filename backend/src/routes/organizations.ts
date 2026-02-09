@@ -16,14 +16,14 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
 });
 
 router.post('/', authenticate, requireRole('ORG_ADMIN'), async (req: Request, res: Response) => {
-  const { name, description, logoUrl, website } = req.body;
-  const org = await prisma.organization.create({ data: { name, description, logoUrl, website, adminId: req.user!.userId } });
+  const { name, description, logoUrl, website, city, state, ageDivisions, seasons, sports } = req.body;
+  const org = await prisma.organization.create({ data: { name, description, logoUrl, website, city, state, ageDivisions: ageDivisions || [], seasons: seasons || [], sports: sports || [], adminId: req.user!.userId } });
   res.status(201).json(org);
 });
 
 router.put('/:id', authenticate, requireRole('ORG_ADMIN'), async (req: Request, res: Response) => {
-  const { name, description, logoUrl, website } = req.body;
-  const org = await prisma.organization.updateMany({ where: { id: req.params.id as string, adminId: req.user!.userId }, data: { name, description, logoUrl, website } });
+  const { name, description, logoUrl, website, city, state, ageDivisions, seasons, sports } = req.body;
+  const org = await prisma.organization.updateMany({ where: { id: req.params.id as string, adminId: req.user!.userId }, data: { name, description, logoUrl, website, city, state, ageDivisions, seasons, sports } });
   if (org.count === 0) { res.status(404).json({ error: 'Not found or unauthorized' }); return; }
   res.json({ success: true });
 });
