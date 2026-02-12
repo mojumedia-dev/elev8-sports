@@ -157,21 +157,12 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Organizations</p>
-              <p className="text-3xl font-bold text-secondary">{orgs?.length || 0}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-2xl">🏢</div>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <Card>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Total Teams</p>
-              <p className="text-3xl font-bold text-secondary">{teams?.length || 0}</p>
+              <p className="text-3xl font-bold text-secondary">{orgs?.reduce((s: number, o: any) => s + (o._count?.teams || 0), 0) || 0}</p>
             </div>
             <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center text-2xl">⚽</div>
           </div>
@@ -180,7 +171,8 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Total Players</p>
-              <p className="text-3xl font-bold text-secondary">{teams?.reduce((s: number, t: any) => s + (t._count?.members || 0), 0) || 0}</p>
+              <p className="text-3xl font-bold text-secondary">—</p>
+              <p className="text-xs text-gray-400">Excludes coaches</p>
             </div>
             <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-2xl">👥</div>
           </div>

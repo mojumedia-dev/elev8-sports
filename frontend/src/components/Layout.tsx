@@ -25,7 +25,6 @@ export default function Layout() {
     { to: '/schedule', label: 'Schedule', icon: '📅' },
     { to: '/messages', label: 'Messages', icon: '💬' },
     { to: '/directory', label: 'Directory', icon: '🔍' },
-    { to: '/import-stats', label: 'Stats', icon: '📊' },
     { to: '/children', label: 'Children', icon: '👧' },
   ];
 

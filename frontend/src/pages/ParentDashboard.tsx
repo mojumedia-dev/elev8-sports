@@ -8,28 +8,19 @@ export default function ParentDashboard() {
   const { data: children } = useApi<any[]>('/children');
   const { data: events } = useApi<any[]>('/events');
   const { data: notifications } = useApi<any[]>('/notifications');
-  const { data: imports } = useApi<any[]>('/imports/gamechanger/imports');
+  const { data: announcements } = useApi<any[]>('/announcements/all');
 
   const upcoming = events?.filter((e: any) => new Date(e.startTime) > new Date()).slice(0, 5) || [];
   const unread = notifications?.filter((n: any) => !n.read).length || 0;
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-secondary">Welcome back, {user?.firstName}! 👋</h1>
-        <p className="text-gray-500 mt-1">Here's what's happening with your family's sports.</p>
+    <div className="px-1 sm:px-0">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Welcome back, {user?.firstName}! 👋</h1>
+        <p className="text-gray-500 mt-1 text-sm sm:text-base">Here's what's happening with your family's sports.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">My Children</p>
-              <p className="text-3xl font-bold text-secondary">{children?.length || 0}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-2xl">👧</div>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <Card>
           <div className="flex items-center justify-between">
             <div>
@@ -50,14 +41,40 @@ export default function ParentDashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Announcements Feed */}
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-secondary">📢 Announcements</h2>
+          </div>
+          {!announcements || announcements.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-4">No announcements yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {announcements.slice(0, 10).map((ann: any) => (
+                <div key={ann.id} className="p-3 bg-slate rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-semibold text-secondary text-sm">{ann.title}</h4>
+                    {ann.organization && (
+                      <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">{ann.organization.name}</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">{ann.content}</p>
+                  <p className="text-xs text-gray-400 mt-1">{new Date(ann.createdAt).toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* My Children */}
         <Card>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-secondary">My Children</h2>
             <Link to="/children" className="text-sm text-primary hover:underline">Manage</Link>
           </div>
           {children?.length === 0 ? (
-            <p className="text-gray-400 text-sm">No children added yet. Add a child to get started!</p>
+            <p className="text-gray-400 text-sm">No children added yet. <Link to="/children" className="text-primary hover:underline">Add a child</Link> to get started!</p>
           ) : (
             <div className="space-y-3">
               {children?.map((child: any) => (
@@ -66,14 +83,15 @@ export default function ParentDashboard() {
                     <p className="font-medium text-secondary">{child.firstName} {child.lastName}</p>
                     <p className="text-sm text-gray-500">{child.teamMembers?.length || 0} teams</p>
                   </div>
-                  <span className="text-gray-400 text-sm">View Stats →</span>
+                  <span className="text-gray-400 text-sm">View →</span>
                 </Link>
               ))}
             </div>
           )}
         </Card>
 
-        <Card>
+        {/* Upcoming Events */}
+        <Card className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-secondary">Upcoming Events</h2>
             <Link to="/schedule" className="text-sm text-primary hover:underline">View All</Link>
@@ -90,7 +108,7 @@ export default function ParentDashboard() {
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                     event.type === 'GAME' ? 'bg-primary/10 text-primary' :
-                    event.type === 'PRACTICE' ? 'bg-green-50 text-green-700' : 'bg-accent/10 text-accent-dark'
+                    event.type === 'PRACTICE' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
                   }`}>{event.type}</span>
                 </div>
               ))}
@@ -98,39 +116,6 @@ export default function ParentDashboard() {
           )}
         </Card>
       </div>
-
-      {/* GameChanger Import Card */}
-      <Card className="mt-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-secondary">📊 Recent Stat Imports</h2>
-          <Link to="/import-stats" className="text-sm text-primary hover:underline">Import Stats</Link>
-        </div>
-        {!imports || imports.length === 0 ? (
-          <div className="text-center py-4">
-            <p className="text-gray-400 text-sm mb-2">No stats imported yet.</p>
-            <Link to="/import-stats" className="text-sm text-primary hover:underline font-medium">
-              Import from GameChanger →
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {imports.slice(0, 3).map((imp: any) => (
-              <div key={imp.id} className="flex items-center justify-between p-3 bg-slate rounded-lg">
-                <div>
-                  <p className="font-medium text-secondary">
-                    {imp.child?.firstName} {imp.child?.lastName}
-                    {imp.teamName && <span className="text-gray-500"> — {imp.teamName}</span>}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {imp.sport === 'SOFTBALL' ? '🥎' : '⚾'} {imp.sport} · {imp._count?.stats || 0} stats
-                  </p>
-                </div>
-                <p className="text-xs text-gray-400">{new Date(imp.importedAt).toLocaleDateString()}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
     </div>
   );
 }

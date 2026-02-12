@@ -4,11 +4,22 @@ import { authenticate, requireRole } from '../middleware/auth';
 
 const router = Router();
 
+// Get ALL announcements (feed)
+router.get('/all', authenticate, async (_req: Request, res: Response) => {
+  const announcements = await prisma.announcement.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+    include: { organization: { select: { id: true, name: true } } },
+  });
+  res.json(announcements);
+});
+
 // Get announcements for an org
 router.get('/:orgId', authenticate, async (req: Request, res: Response) => {
   const announcements = await prisma.announcement.findMany({
     where: { organizationId: req.params.orgId as string },
     orderBy: { createdAt: 'desc' },
+    include: { organization: { select: { id: true, name: true } } },
   });
   res.json(announcements);
 });
