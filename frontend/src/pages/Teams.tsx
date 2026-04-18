@@ -16,7 +16,13 @@ const SPORTS = [
 
 const sportEmoji = (s: string) => SPORTS.find(sp => sp.value === s)?.emoji || '🏅';
 
-interface TeamForm { name: string; sport: string; season: string; ageGroup: string }
+const US_STATES = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'
+];
+
+interface TeamForm { name: string; sport: string; season: string; ageGroup: string; city: string; state: string }
 
 function TeamFormFields({ form, setForm, onSubmit, onCancel, submitLabel }: {
   form: TeamForm; setForm: (f: TeamForm) => void; onSubmit: (e: FormEvent) => void; onCancel: () => void; submitLabel: string;
@@ -35,7 +41,15 @@ function TeamFormFields({ form, setForm, onSubmit, onCancel, submitLabel }: {
           className="px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none text-base sm:text-sm" />
         <input placeholder="Age Group (e.g., U12)" value={form.ageGroup} onChange={(e) => setForm({ ...form, ageGroup: e.target.value })}
           className="px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none text-base sm:text-sm" />
+        <input placeholder="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })}
+          className="px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none text-base sm:text-sm" />
+        <select value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })}
+          className="px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white text-base sm:text-sm">
+          <option value="">State (optional)</option>
+          {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
       </div>
+      <p className="text-xs text-gray-400">Leave location blank to inherit from the organization.</p>
       <div className="flex flex-col sm:flex-row gap-2">
         <button type="submit" className="px-4 py-2.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-medium w-full sm:w-auto">{submitLabel}</button>
         <button type="button" onClick={onCancel} className="px-4 py-2.5 sm:py-2 bg-gray-200 rounded-lg text-sm w-full sm:w-auto">Cancel</button>
@@ -49,20 +63,20 @@ export default function Teams() {
   const { data: teams, refetch } = useApi<any[]>('/teams');
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<TeamForm>({ name: '', sport: '', season: '', ageGroup: '' });
-  const [editForm, setEditForm] = useState<TeamForm>({ name: '', sport: '', season: '', ageGroup: '' });
+  const [form, setForm] = useState<TeamForm>({ name: '', sport: '', season: '', ageGroup: '', city: '', state: '' });
+  const [editForm, setEditForm] = useState<TeamForm>({ name: '', sport: '', season: '', ageGroup: '', city: '', state: '' });
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     await api('/teams', { method: 'POST', body: form, token: token! });
-    setForm({ name: '', sport: '', season: '', ageGroup: '' });
+    setForm({ name: '', sport: '', season: '', ageGroup: '', city: '', state: '' });
     setShowCreate(false);
     refetch();
   };
 
   const startEdit = (team: any) => {
     setEditingId(team.id);
-    setEditForm({ name: team.name, sport: team.sport || '', season: team.season || '', ageGroup: team.ageGroup || '' });
+    setEditForm({ name: team.name, sport: team.sport || '', season: team.season || '', ageGroup: team.ageGroup || '', city: team.city || '', state: team.state || '' });
     setShowCreate(false);
   };
 
@@ -129,6 +143,9 @@ export default function Teams() {
                     <span>📅 {team._count?.events || 0} events</span>
                   </div>
                   {team.season && <p className="mt-2 text-xs text-gray-400">{team.season} {team.ageGroup && `· ${team.ageGroup}`}</p>}
+                  {(team.city || team.organization?.city) && (
+                    <p className="mt-1 text-xs text-gray-400">📍 {team.city || team.organization?.city}{(team.state || team.organization?.state) ? `, ${team.state || team.organization?.state}` : ''}</p>
+                  )}
                   {team.organization && <p className="mt-1 text-xs text-accent font-medium">{team.organization.name}</p>}
                   <div className="mt-3 pt-3 border-t flex gap-3">
                     <Link to={`/teams/${team.id}`} className="text-sm text-primary hover:underline font-medium">View Team →</Link>

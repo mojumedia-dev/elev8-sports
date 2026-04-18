@@ -15,6 +15,9 @@ import ImportStats from './pages/ImportStats';
 import PlayerProfile from './pages/PlayerProfile';
 import Children from './pages/Children';
 import OrgView from './pages/OrgView';
+import Coaches from './pages/Coaches';
+import CoachProfileEdit from './pages/CoachProfileEdit';
+import CoachDetail from './pages/CoachDetail';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -54,6 +57,9 @@ export default function App() {
         <Route path="/children" element={<Children />} />
         <Route path="/organizations/:id" element={<OrgView />} />
         <Route path="/players/:childId" element={<PlayerProfile />} />
+        <Route path="/coaches" element={<Coaches />} />
+        <Route path="/coaches/:id" element={<CoachDetail />} />
+        <Route path="/coach-profile" element={<CoachProfileEdit />} />
       </Route>
     </Routes>
   );

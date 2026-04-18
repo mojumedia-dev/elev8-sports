@@ -15,6 +15,8 @@ import messageRoutes from './routes/messages';
 import notificationRoutes from './routes/notifications';
 import gamechangerRoutes from './routes/gamechanger';
 import announcementRoutes from './routes/announcements';
+import coachProfileRoutes from './routes/coachProfiles';
+import reviewRoutes from './routes/reviews';
 import { errorHandler } from './middleware/errorHandler';
 
 export const prisma = new PrismaClient();
@@ -37,6 +39,8 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/imports/gamechanger', gamechangerRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/coach-profiles', coachProfileRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 app.use(errorHandler);
 

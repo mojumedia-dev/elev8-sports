@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { api } from '../utils/api';
 import Card from '../components/Card';
+import ReviewSection from '../components/ReviewSection';
 
 const sportEmoji: Record<string, string> = { BASEBALL:'⚾', SOFTBALL:'🥎', BASKETBALL:'🏀', SOCCER:'⚽', FLAG_FOOTBALL:'🏈', OTHER:'🏅' };
 
@@ -227,6 +228,10 @@ export default function OrgView() {
             </div>
           )}
         </Card>
+      </div>
+
+      <div className="mt-6">
+        <ReviewSection targetType="ORGANIZATION" targetId={org.id} />
       </div>
     </div>
   );

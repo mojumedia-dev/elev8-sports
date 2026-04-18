@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Card from '../components/Card';
-import { Link } from 'react-router-dom';
+import NearbyDiscovery from '../components/NearbyDiscovery';
 import { useState, FormEvent } from 'react';
 import { api } from '../utils/api';
 
@@ -258,6 +258,8 @@ export default function AdminDashboard() {
           </div>
         )}
       </Card>
+
+      <NearbyDiscovery />
     </div>
   );
 }

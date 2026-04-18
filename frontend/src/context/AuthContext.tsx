@@ -9,6 +9,9 @@ interface User {
   firstName: string;
   lastName: string;
   role: Role;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
   isAdmin?: boolean;
 }
 
@@ -22,6 +25,7 @@ interface AuthState {
   activeRole: Role | null;
   setActiveRole: (role: Role) => void;
   isAdminMode: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState>({} as AuthState);
@@ -86,6 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setActiveRoleState(res.user.role);
   };
 
+  const refreshUser = async () => {
+    if (!token) return;
+    const u = await api<User>('/users/me', { token });
+    setUser({ ...u, isAdmin: ADMIN_EMAILS.includes(u.email.toLowerCase()) });
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
@@ -99,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const effectiveUser = user && activeRole ? { ...user, role: activeRole } : user;
 
   return (
-    <AuthContext.Provider value={{ user: effectiveUser, token, loading, login, register, logout, activeRole: activeRole || user?.role || null, setActiveRole, isAdminMode }}>
+    <AuthContext.Provider value={{ user: effectiveUser, token, loading, login, register, logout, activeRole: activeRole || user?.role || null, setActiveRole, isAdminMode, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

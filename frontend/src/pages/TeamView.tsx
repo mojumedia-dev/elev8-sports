@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { api } from '../utils/api';
 import Card from '../components/Card';
+import ReviewSection from '../components/ReviewSection';
 
 const sportEmoji: Record<string, string> = { BASEBALL: '⚾', SOFTBALL: '🥎', BASKETBALL: '🏀', SOCCER: '⚽', FLAG_FOOTBALL: '🏈', OTHER: '🏅' };
 
@@ -250,6 +251,7 @@ export default function TeamView() {
         {/* Schedule */}
         <Card>
           <h2 className="text-lg font-semibold text-secondary mb-4">Schedule ({team.events?.length || 0})</h2>
+
           {team.events?.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-6">No events scheduled.</p>
           ) : (
@@ -270,6 +272,10 @@ export default function TeamView() {
             </div>
           )}
         </Card>
+      </div>
+
+      <div className="mt-6">
+        <ReviewSection targetType="TEAM" targetId={team.id} />
       </div>
     </div>
   );
