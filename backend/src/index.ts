@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
@@ -23,11 +24,44 @@ export const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: process.env.FRONTEND_URL || '*', credentials: true }));
-app.use(express.json());
+if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
+  console.error('FATAL: FRONTEND_URL must be set in production');
+  process.exit(1);
+}
 
-// Routes
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',').map(s => s.trim());
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`Origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
+app.use(express.json({ limit: '6mb' }));
+app.set('trust proxy', 1);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many auth attempts, please try again later' },
+});
+
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many reset requests, please try again later' },
+});
+
 app.get('/api/health', (_req, res) => { res.json({ status: 'ok', timestamp: new Date().toISOString() }); });
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', passwordResetLimiter);
+app.use('/api/auth/reset-password', passwordResetLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/children', childRoutes);

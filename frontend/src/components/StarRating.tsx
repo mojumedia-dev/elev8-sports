@@ -16,7 +16,8 @@ export function StarInput({ value, onChange }: { value: number; onChange: (v: nu
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map(n => (
-        <button key={n} type="button" onClick={() => onChange(n)}
+        <button key={n} type="button" onClick={() => onChange(n)} aria-label={`${n} ${n === 1 ? 'star' : 'stars'}`}
+          aria-pressed={n === value}
           className={`text-2xl transition ${n <= value ? 'text-amber-500' : 'text-gray-300 hover:text-amber-300'}`}>
           ★
         </button>

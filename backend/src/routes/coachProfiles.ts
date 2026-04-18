@@ -1,8 +1,24 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { prisma } from '../index';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
+
+const coachProfileSchema = z.object({
+  bio: z.string().trim().max(3000).optional().nullable(),
+  sports: z.array(z.string().trim().max(40)).max(20).optional(),
+  specialties: z.array(z.string().trim().max(80)).max(30).optional(),
+  hourlyRate: z.union([z.number().min(0).max(10000), z.string()]).optional().nullable(),
+  yearsExperience: z.union([z.number().int().min(0).max(80), z.string()]).optional().nullable(),
+  certifications: z.array(z.string().trim().max(120)).max(30).optional(),
+  city: z.string().trim().max(80).optional().nullable(),
+  state: z.string().trim().max(2).optional().nullable(),
+  zipCode: z.string().trim().max(10).optional().nullable(),
+  contactEmail: z.string().trim().email().max(120).optional().nullable().or(z.literal('')),
+  contactPhone: z.string().trim().max(40).optional().nullable(),
+  acceptingClients: z.boolean().optional(),
+});
 
 // Browse coaches — defaults to nearby if user has location, with optional sport/specialty filters
 router.get('/', authenticate, async (req: Request, res: Response) => {
@@ -52,14 +68,24 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
 
 // Upsert my coach profile
 router.put('/me', authenticate, async (req: Request, res: Response) => {
-  const { bio, sports, specialties, hourlyRate, yearsExperience, certifications, city, state, zipCode, contactEmail, contactPhone, acceptingClients } = req.body;
+  const parsed = coachProfileSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() }); return; }
+  const p = parsed.data;
+  const rate = p.hourlyRate === null || p.hourlyRate === undefined || p.hourlyRate === '' ? null : Math.max(0, Number(p.hourlyRate));
+  const years = p.yearsExperience === null || p.yearsExperience === undefined || p.yearsExperience === '' ? null : Math.max(0, Math.floor(Number(p.yearsExperience)));
   const data: any = {
-    bio, sports: sports || [], specialties: specialties || [],
-    hourlyRate: hourlyRate ? Number(hourlyRate) : null,
-    yearsExperience: yearsExperience ? Number(yearsExperience) : null,
-    certifications: certifications || [],
-    city, state, zipCode, contactEmail, contactPhone,
-    acceptingClients: acceptingClients !== undefined ? !!acceptingClients : true,
+    bio: p.bio ?? undefined,
+    sports: p.sports ?? [],
+    specialties: p.specialties ?? [],
+    hourlyRate: Number.isFinite(rate as number) ? rate : null,
+    yearsExperience: Number.isFinite(years as number) ? years : null,
+    certifications: p.certifications ?? [],
+    city: p.city ?? undefined,
+    state: p.state ?? undefined,
+    zipCode: p.zipCode ?? undefined,
+    contactEmail: p.contactEmail || null,
+    contactPhone: p.contactPhone ?? undefined,
+    acceptingClients: p.acceptingClients !== undefined ? !!p.acceptingClients : true,
   };
   const profile = await prisma.coachProfile.upsert({
     where: { userId: req.user!.userId },
@@ -79,7 +105,7 @@ router.delete('/me', authenticate, async (req: Request, res: Response) => {
 router.get('/:id', authenticate, async (req: Request, res: Response) => {
   const profile = await prisma.coachProfile.findUnique({
     where: { id: req.params.id as string },
-    include: { user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } } },
+    include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
   });
   if (!profile) { res.status(404).json({ error: 'Not found' }); return; }
 

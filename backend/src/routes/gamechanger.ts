@@ -5,6 +5,24 @@ import { parseGameChangerCSV, calculateStatSummary } from '../utils/gamechangerP
 
 const router = Router();
 
+const MAX_CSV_BYTES = 5 * 1024 * 1024;
+
+async function canAccessChild(userId: string, isAdmin: boolean, childId: string): Promise<boolean> {
+  if (isAdmin) return true;
+  const owns = await prisma.child.findFirst({ where: { id: childId, parentId: userId }, select: { id: true } });
+  if (owns) return true;
+  // Coach on a team the child is on
+  const coach = await prisma.teamMember.findFirst({
+    where: {
+      userId,
+      role: 'COACH',
+      team: { members: { some: { childId } } },
+    },
+    select: { id: true },
+  });
+  return !!coach;
+}
+
 /**
  * POST /upload-csv
  * Upload and parse a GameChanger CSV export
@@ -16,6 +34,10 @@ router.post('/upload-csv', authenticate, async (req: Request, res: Response) => 
 
     if (!csvData || !childId) {
       res.status(400).json({ error: 'csvData and childId are required' });
+      return;
+    }
+    if (typeof csvData !== 'string' || csvData.length > MAX_CSV_BYTES) {
+      res.status(413).json({ error: 'CSV too large or invalid' });
       return;
     }
 
@@ -104,14 +126,8 @@ router.get('/stats/:childId', authenticate, async (req: Request, res: Response) 
   const childId = req.params.childId as string;
   const { sport, season, source } = req.query;
 
-  // Verify access (parent owns child, or coach on same team)
-  const child = await prisma.child.findFirst({
-    where: { id: childId },
-    include: { parent: { select: { id: true } } },
-  });
-
-  if (!child) {
-    res.status(404).json({ error: 'Child not found' });
+  if (!(await canAccessChild(req.user!.userId, !!req.user!.isAdmin, childId))) {
+    res.status(403).json({ error: 'No access to this child' });
     return;
   }
 
@@ -136,6 +152,11 @@ router.get('/stats/:childId', authenticate, async (req: Request, res: Response) 
 router.get('/stats/:childId/summary', authenticate, async (req: Request, res: Response) => {
   const childId = req.params.childId as string;
   const { sport, season } = req.query;
+
+  if (!(await canAccessChild(req.user!.userId, !!req.user!.isAdmin, childId))) {
+    res.status(403).json({ error: 'No access to this child' });
+    return;
+  }
 
   const where: any = { childId };
   if (sport) where.sport = sport as string;

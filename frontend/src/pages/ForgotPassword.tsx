@@ -34,9 +34,12 @@ export default function ForgotPassword() {
           <h2 className="text-2xl font-bold text-secondary mb-2">Reset Password</h2>
           {submitted ? (
             <>
-              <p className="text-sm text-gray-600 mb-4">
-                If an account exists for <span className="font-medium">{email}</span>, we've sent a reset link.
-                Check your email (and spam folder).
+              <p className="text-sm text-gray-600 mb-3">
+                If an account exists for <span className="font-medium">{email}</span>, a reset link has been generated.
+              </p>
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                Note: email delivery is not yet configured. To receive the reset link, contact support
+                (<a href="mailto:adamlloyd@msn.com" className="underline">adamlloyd@msn.com</a>) or grab it from the server logs.
               </p>
               <Link to="/login" className="block text-center text-sm text-primary hover:underline">Back to sign in</Link>
             </>
