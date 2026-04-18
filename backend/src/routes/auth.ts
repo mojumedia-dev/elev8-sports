@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { prisma } from '../index';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 
@@ -79,6 +80,52 @@ router.post('/refresh', async (req: Request, res: Response) => {
     res.json({ accessToken: newAccess, refreshToken: newRefresh });
   } catch {
     res.status(401).json({ error: 'Invalid refresh token' });
+  }
+});
+
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string') { res.status(400).json({ error: 'Email required' }); return; }
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+    if (user) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      await prisma.passwordResetToken.create({ data: { token, userId: user.id, expiresAt } });
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+      console.log(`[password-reset] ${user.email} → ${resetUrl}`);
+    }
+    res.json({ message: 'If an account exists for that email, a reset link has been sent.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) { res.status(400).json({ error: 'Token and password required' }); return; }
+    if (typeof password !== 'string' || password.length < 6) {
+      res.status(400).json({ error: 'Password must be at least 6 characters' });
+      return;
+    }
+    const record = await prisma.passwordResetToken.findUnique({ where: { token } });
+    if (!record || record.used || record.expiresAt < new Date()) {
+      res.status(400).json({ error: 'Invalid or expired token' });
+      return;
+    }
+    const passwordHash = await bcrypt.hash(password, 10);
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: record.userId }, data: { passwordHash } }),
+      prisma.passwordResetToken.update({ where: { id: record.id }, data: { used: true } }),
+      prisma.refreshToken.deleteMany({ where: { userId: record.userId } }),
+    ]);
+    res.json({ message: 'Password reset successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 });
 
