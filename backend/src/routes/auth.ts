@@ -13,14 +13,15 @@ router.post('/register', async (req: Request, res: Response) => {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       res.status(409).json({ error: 'Email already registered' });
       return;
     }
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { email, passwordHash, firstName, lastName, phone, role: role || 'PARENT' },
+      data: { email: normalizedEmail, passwordHash, firstName, lastName, phone, role: role || 'PARENT' },
       select: { id: true, email: true, firstName: true, lastName: true, role: true },
     });
     const payload = { userId: user.id, email: user.email, role: user.role };
@@ -39,7 +40,12 @@ router.post('/register', async (req: Request, res: Response) => {
 router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    const user = await prisma.user.findUnique({ where: { email } });
+    if (!email || !password) { res.status(400).json({ error: 'Email and password required' }); return; }
+    const normalizedEmail = String(email).trim().toLowerCase();
+    let user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user) {
+      user = await prisma.user.findFirst({ where: { email: { equals: normalizedEmail, mode: 'insensitive' } } });
+    }
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
@@ -87,10 +93,15 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
     if (!email || typeof email !== 'string') { res.status(400).json({ error: 'Email required' }); return; }
-    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+    const normalizedEmail = email.trim().toLowerCase();
+    let user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user) {
+      user = await prisma.user.findFirst({ where: { email: { equals: normalizedEmail, mode: 'insensitive' } } });
+    }
     if (user) {
       const token = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      await prisma.passwordResetToken.deleteMany({ where: { userId: user.id, used: false } });
       await prisma.passwordResetToken.create({ data: { token, userId: user.id, expiresAt } });
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
