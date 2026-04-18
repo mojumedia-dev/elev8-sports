@@ -5,6 +5,7 @@ import { useApi } from '../hooks/useApi';
 import { api } from '../utils/api';
 import Card from '../components/Card';
 import ReviewSection from '../components/ReviewSection';
+import UnclaimedStats from '../components/UnclaimedStats';
 
 const sportEmoji: Record<string, string> = { BASEBALL: '⚾', SOFTBALL: '🥎', BASKETBALL: '🏀', SOCCER: '⚽', FLAG_FOOTBALL: '🏈', OTHER: '🏅' };
 
@@ -272,6 +273,10 @@ export default function TeamView() {
             </div>
           )}
         </Card>
+      </div>
+
+      <div className="mt-6">
+        <UnclaimedStats teamId={team.id} />
       </div>
 
       <div className="mt-6">

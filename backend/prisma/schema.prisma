@@ -161,6 +161,8 @@ model Team {
   members        TeamMember[]
   events         Event[]
   messages       Message[]
+  gcImports      GameChangerImport[]
+  unclaimedStats UnclaimedStat[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 }
@@ -237,17 +239,50 @@ model GameChangerImport {
   id          String      @id @default(cuid())
   userId      String
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  childId     String
-  child       Child       @relation(fields: [childId], references: [id], onDelete: Cascade)
+  childId     String?
+  child       Child?      @relation(fields: [childId], references: [id], onDelete: Cascade)
+  teamId      String?
+  team        Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
   sport       Sport
   importType  ImportType  @default(CSV)
+  scope       ImportScope @default(CHILD)
   rawData     Json
   parsedStats Json
   season      String?
   teamName    String?
   importedAt  DateTime    @default(now())
   stats       PlayerStats[]
+  unclaimed   UnclaimedStat[]
   createdAt   DateTime    @default(now())
+
+  @@index([teamId])
+  @@index([childId])
+}
+
+enum ImportScope {
+  CHILD
+  TEAM
+}
+
+model UnclaimedStat {
+  id              String     @id @default(cuid())
+  importId        String
+  import          GameChangerImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+  teamId          String?
+  team            Team?      @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  playerName      String
+  sport           Sport
+  season          String?
+  statType        String
+  statValue       Float
+  gameDate        DateTime?
+  claimed         Boolean    @default(false)
+  claimedByChildId String?
+  claimedAt       DateTime?
+  createdAt       DateTime   @default(now())
+
+  @@index([teamId, claimed])
+  @@index([importId])
 }
 
 enum ReviewTargetType {
