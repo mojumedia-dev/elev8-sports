@@ -1,19 +1,27 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { z } from 'zod';
 import { prisma } from '../index';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 
 const router = Router();
 
+const registerSchema = z.object({
+  email: z.string().trim().email().max(120),
+  password: z.string().min(6).max(200),
+  firstName: z.string().trim().min(1).max(80),
+  lastName: z.string().trim().min(1).max(80),
+  phone: z.string().trim().max(40).optional().nullable(),
+  role: z.enum(['PARENT', 'COACH', 'ORG_ADMIN']).optional(),
+});
+
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { email, password, firstName, lastName, phone, role } = req.body;
-    if (!email || !password || !firstName || !lastName) {
-      res.status(400).json({ error: 'Missing required fields' });
-      return;
-    }
-    const normalizedEmail = String(email).trim().toLowerCase();
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() }); return; }
+    const { email, password, firstName, lastName, phone, role } = parsed.data;
+    const normalizedEmail = email.toLowerCase();
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       res.status(409).json({ error: 'Email already registered' });
@@ -21,7 +29,7 @@ router.post('/register', async (req: Request, res: Response) => {
     }
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { email: normalizedEmail, passwordHash, firstName, lastName, phone, role: role || 'PARENT' },
+      data: { email: normalizedEmail, passwordHash, firstName, lastName, phone: phone ?? undefined, role: role || 'PARENT' },
       select: { id: true, email: true, firstName: true, lastName: true, role: true },
     });
     const payload = { userId: user.id, email: user.email, role: user.role };

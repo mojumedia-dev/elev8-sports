@@ -25,6 +25,7 @@ router.get('/:targetType/:targetId', authenticate, async (req: Request, res: Res
 router.post('/:targetType/:targetId', authenticate, async (req: Request, res: Response) => {
   const targetType = (req.params.targetType as string).toUpperCase() as TargetType;
   if (!VALID_TYPES.includes(targetType)) { res.status(400).json({ error: 'Invalid target type' }); return; }
+  const targetId = req.params.targetId as string;
 
   const { rating, comment } = req.body;
   const r = Number(rating);
@@ -32,10 +33,17 @@ router.post('/:targetType/:targetId', authenticate, async (req: Request, res: Re
   if (comment && typeof comment !== 'string') { res.status(400).json({ error: 'Invalid comment' }); return; }
   const safeComment = comment ? String(comment).slice(0, 2000) : null;
 
+  const exists = targetType === 'TEAM'
+    ? await prisma.team.findUnique({ where: { id: targetId }, select: { id: true } })
+    : targetType === 'ORGANIZATION'
+      ? await prisma.organization.findUnique({ where: { id: targetId }, select: { id: true } })
+      : await prisma.coachProfile.findUnique({ where: { id: targetId }, select: { id: true } });
+  if (!exists) { res.status(404).json({ error: 'Target not found' }); return; }
+
   const review = await prisma.review.upsert({
-    where: { reviewerId_targetType_targetId: { reviewerId: req.user!.userId, targetType, targetId: req.params.targetId as string } },
+    where: { reviewerId_targetType_targetId: { reviewerId: req.user!.userId, targetType, targetId } },
     update: { rating: r, comment: safeComment },
-    create: { reviewerId: req.user!.userId, targetType, targetId: req.params.targetId as string, rating: r, comment: safeComment },
+    create: { reviewerId: req.user!.userId, targetType, targetId, rating: r, comment: safeComment },
   });
   res.status(201).json(review);
 });

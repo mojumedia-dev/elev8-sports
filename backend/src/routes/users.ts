@@ -1,8 +1,19 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { prisma } from '../index';
 import { authenticate, requireRole } from '../middleware/auth';
 
 const router = Router();
+
+const userUpdateSchema = z.object({
+  firstName: z.string().trim().min(1).max(80).optional(),
+  lastName: z.string().trim().min(1).max(80).optional(),
+  phone: z.string().trim().max(40).optional().nullable(),
+  avatarUrl: z.string().trim().max(500).optional().nullable(),
+  city: z.string().trim().max(80).optional().nullable(),
+  state: z.string().trim().max(2).optional().nullable(),
+  zipCode: z.string().trim().max(10).optional().nullable(),
+});
 
 router.get('/me', authenticate, async (req: Request, res: Response) => {
   const user = await prisma.user.findUnique({
@@ -13,10 +24,11 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
 });
 
 router.put('/me', authenticate, async (req: Request, res: Response) => {
-  const { firstName, lastName, phone, avatarUrl, city, state, zipCode } = req.body;
+  const parsed = userUpdateSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() }); return; }
   const user = await prisma.user.update({
     where: { id: req.user!.userId },
-    data: { firstName, lastName, phone, avatarUrl, city, state, zipCode },
+    data: parsed.data as any,
     select: { id: true, email: true, firstName: true, lastName: true, phone: true, role: true, avatarUrl: true, city: true, state: true, zipCode: true },
   });
   res.json(user);

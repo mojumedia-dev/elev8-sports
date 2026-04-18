@@ -1,8 +1,22 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { prisma } from '../index';
 import { authenticate, requireRole } from '../middleware/auth';
 
 const router = Router();
+
+const orgSchema = z.object({
+  name: z.string().trim().min(1).max(150),
+  description: z.string().trim().max(3000).optional().nullable(),
+  logoUrl: z.string().trim().max(500).optional().nullable(),
+  website: z.string().trim().max(300).optional().nullable(),
+  city: z.string().trim().max(80).optional().nullable(),
+  state: z.string().trim().max(2).optional().nullable(),
+  zipCode: z.string().trim().max(10).optional().nullable(),
+  ageDivisions: z.array(z.string().max(40)).max(50).optional(),
+  seasons: z.array(z.string().max(40)).max(50).optional(),
+  sports: z.array(z.string().max(40)).max(20).optional(),
+});
 
 router.get('/', authenticate, async (_req: Request, res: Response) => {
   const orgs = await prisma.organization.findMany({ include: { admin: { select: { firstName: true, lastName: true } }, _count: { select: { teams: true } } } });
@@ -41,14 +55,35 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
 });
 
 router.post('/', authenticate, requireRole('ORG_ADMIN'), async (req: Request, res: Response) => {
-  const { name, description, logoUrl, website, city, state, zipCode, ageDivisions, seasons, sports } = req.body;
-  const org = await prisma.organization.create({ data: { name, description, logoUrl, website, city, state, zipCode, ageDivisions: ageDivisions || [], seasons: seasons || [], sports: sports || [], adminId: req.user!.userId } });
+  const parsed = orgSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() }); return; }
+  const d = parsed.data;
+  const org = await prisma.organization.create({
+    data: {
+      name: d.name, description: d.description ?? undefined, logoUrl: d.logoUrl ?? undefined,
+      website: d.website ?? undefined, city: d.city ?? undefined, state: d.state ?? undefined, zipCode: d.zipCode ?? undefined,
+      ageDivisions: d.ageDivisions ?? [], seasons: d.seasons ?? [], sports: (d.sports as any) ?? [],
+      adminId: req.user!.userId,
+    },
+  });
   res.status(201).json(org);
 });
 
 router.put('/:id', authenticate, requireRole('ORG_ADMIN'), async (req: Request, res: Response) => {
-  const { name, description, logoUrl, website, city, state, zipCode, ageDivisions, seasons, sports } = req.body;
-  const org = await prisma.organization.updateMany({ where: { id: req.params.id as string, adminId: req.user!.userId }, data: { name, description, logoUrl, website, city, state, zipCode, ageDivisions, seasons, sports } });
+  const parsed = orgSchema.partial().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() }); return; }
+  const d = parsed.data;
+  const where = req.user!.isAdmin
+    ? { id: req.params.id as string }
+    : { id: req.params.id as string, adminId: req.user!.userId };
+  const org = await prisma.organization.updateMany({
+    where,
+    data: {
+      name: d.name, description: d.description ?? undefined, logoUrl: d.logoUrl ?? undefined,
+      website: d.website ?? undefined, city: d.city ?? undefined, state: d.state ?? undefined, zipCode: d.zipCode ?? undefined,
+      ageDivisions: d.ageDivisions, seasons: d.seasons, sports: d.sports as any,
+    },
+  });
   if (org.count === 0) { res.status(404).json({ error: 'Not found or unauthorized' }); return; }
   res.json({ success: true });
 });

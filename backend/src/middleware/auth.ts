@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, TokenPayload } from '../utils/jwt';
 
-// Admin emails that can bypass role restrictions
-const ADMIN_EMAILS = ['adamlloyd@msn.com', 'adam@mojumedia.com', 'josh@augmentadvertise.com', 'donald@augmentadvertise.com'];
+// Admin emails that can bypass role restrictions.
+// Configurable via ADMIN_EMAILS env var (comma-separated). Falls back to seed list.
+const FALLBACK_ADMINS = ['adamlloyd@msn.com', 'adam@mojumedia.com', 'josh@augmentadvertise.com', 'donald@augmentadvertise.com'];
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || FALLBACK_ADMINS.join(','))
+  .split(',')
+  .map(e => e.trim().toLowerCase())
+  .filter(Boolean);
 
 declare global {
   namespace Express {
